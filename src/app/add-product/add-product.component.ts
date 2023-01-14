@@ -13,6 +13,7 @@ export class AddProductComponent implements OnInit {
   productForm!: FormGroup;
 
   srcResult: any;
+  imageSrc!: string;
 
   constructor(
     private productService: ProductsService,
@@ -24,23 +25,28 @@ export class AddProductComponent implements OnInit {
     this.productForm = new FormGroup({
       title: new FormControl(this.data ? this.data.title : ''),
       description: new FormControl(this.data ? this.data.description : ''),
-      image: new FormControl(this.data ? this.data.image : ''),
+      image: new FormControl(this.data ? this.imageSrc=this.data.image : ''),
       price: new FormControl(this.data ? this.data.price : ''),
       category: new FormControl(this.data ? this.data.category : ''),
     });
+
+    // if (this.data.image) {
+    //   console.log( new File([''], this.data.image, { type: 'image/jpg' }));
+    //   const file =  new File([''], this.data.image, { type: 'image/jpg' });
+    //   this.imageSrc = file.name;
+    //   // this.productForm.patchValue({image:new File([''], this.data.image, { type: 'image/jpg' })});
+    // }
   }
 
-  onFileSelected() {
-    const inputNode: any = document.querySelector('#file');
-
-    if (typeof FileReader !== 'undefined') {
+  onFileSelected(event: any) {
+    if (event.target.files.length) {
+      const file = event.target.files[0];
       const reader = new FileReader();
-
       reader.onload = (e: any) => {
-        this.srcResult = e.target.result;
+        this.imageSrc = e.target.result;
+        this.productForm.patchValue({image: this.imageSrc});
       };
-
-      reader.readAsArrayBuffer(inputNode.files[0]);
+      reader.readAsDataURL(file);
     }
   }
 
