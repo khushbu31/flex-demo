@@ -3,15 +3,17 @@ import { CommonModule } from '@angular/common';
 import { MaterialModule } from './material.module';
 import { HttpClientModule } from '@angular/common/http';
 import { FlexLayoutModule } from '@angular/flex-layout';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [],
-  imports: [
-    CommonModule,
-  ], exports: [
+  imports: [CommonModule],
+  exports: [
     HttpClientModule,
     FlexLayoutModule,
-    MaterialModule
-  ]
+    MaterialModule,
+    FormsModule,
+    ReactiveFormsModule,
+  ],
 })
-export class SharedModule { }
+export class SharedModule {}
