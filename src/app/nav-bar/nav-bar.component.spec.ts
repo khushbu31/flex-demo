@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { MaterialModule } from '../shared/material.module';
 
 import { NavBarComponent } from './nav-bar.component';
 
@@ -8,9 +10,9 @@ describe('NavBarComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ NavBarComponent ]
-    })
-    .compileComponents();
+      declarations: [NavBarComponent],
+      imports: [MaterialModule],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(NavBarComponent);
     component = fixture.componentInstance;
@@ -19,5 +21,14 @@ describe('NavBarComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should check menuItems array is initialized', () => {
+    expect(component.menuItems.length).toBe(4);
+  });
+
+  it('should check menuItem is rendered', () => {
+    const navItems = fixture.debugElement.query(By.css('.nav-items')).children;
+    expect(navItems.length).toBe(4);
   });
 });

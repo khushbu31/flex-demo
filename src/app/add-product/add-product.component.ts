@@ -17,7 +17,7 @@ export class AddProductComponent implements OnInit {
 
   constructor(
     private productService: ProductsService,
-    @Inject(MAT_DIALOG_DATA) private data: Product,
+    @Inject(MAT_DIALOG_DATA) private data: Product | undefined,
     private dialogRef: MatDialogRef<AddProductComponent>
   ) {}
 
@@ -34,7 +34,7 @@ export class AddProductComponent implements OnInit {
     //   console.log( new File([''], this.data.image, { type: 'image/jpg' }));
     //   const file =  new File([''], this.data.image, { type: 'image/jpg' });
     //   this.imageSrc = file.name;
-    //   // this.productForm.patchValue({image:new File([''], this.data.image, { type: 'image/jpg' })});
+    //   this.productForm.patchValue({image:new File([''], this.data.image, { type: 'image/jpg' })});
     // }
   }
 
@@ -43,8 +43,8 @@ export class AddProductComponent implements OnInit {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e: any) => {
+        this.productForm.patchValue({image: file});
         this.imageSrc = e.target.result;
-        this.productForm.patchValue({image: this.imageSrc});
       };
       reader.readAsDataURL(file);
     }

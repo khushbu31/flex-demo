@@ -12,7 +12,8 @@ import { ProductsService } from '../services/products.service';
   styleUrls: ['./products.component.scss'],
 })
 export class ProductsComponent implements OnInit {
-  productData$!: Observable<Product[]>;
+  productData!: Product[];
+  showSpinner = false;
 
   constructor(
     private productService: ProductsService,
@@ -21,7 +22,19 @@ export class ProductsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.productData$ = this.productService.getProducts();
+    this.showSpinner = true;
+    this.productService.getProducts().subscribe({
+      next: (res) => {
+        this.productData = res;
+        this.showSpinner = false;
+      },
+      error: (err) => {
+        this.showSpinner = false;
+        this.snackbar.open('Something went wrong!...', '', {
+          duration: 3000,
+        });
+      }
+    });
   }
 
   openDialog() {
