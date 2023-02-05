@@ -1,37 +1,38 @@
-import { HttpClient, HttpHandler } from '@angular/common/http';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { of, throwError } from 'rxjs';
 import { AddProductComponent } from '../add-product/add-product.component';
 import { Product } from '../models/product.model';
 import { ProductsService } from '../services/products.service';
 import { MaterialModule } from '../shared/material.module';
+import { SharedModule } from '../shared/shared.module';
 import { ProductsComponent } from './products.component';
 
 describe('ProductsComponent', () => {
   let component: ProductsComponent;
   let fixture: ComponentFixture<ProductsComponent>;
-  let productService: ProductsService;
   let dialog: MatDialog;
   let matSnackBar: MatSnackBar;
+  let mockProductService = jasmine.createSpyObj('ProductsService', ['getProducts', 'deleteProduct']);
+  mockProductService.getProducts.and.returnValue(of([]));
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [ProductsComponent],
-      imports: [MaterialModule],
+      imports: [SharedModule, MaterialModule, MatDialogModule, MatSnackBarModule],
       providers: [
-        ProductsService,
-        HttpClient,
-        HttpHandler
-    ]
+        { provide: ProductsService, useValue: mockProductService}
+    ],
+    schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProductsComponent);
     component = fixture.componentInstance;
     dialog = TestBed.inject(MatDialog);
     matSnackBar = TestBed.inject(MatSnackBar);
-    productService = TestBed.inject(ProductsService);
+    mockProductService = TestBed.inject(ProductsService);
     fixture.detectChanges();
   });
 
@@ -47,7 +48,7 @@ describe('ProductsComponent', () => {
         description: 'Test description',
         image: 'test-image.jpg',
         price: '19.99',
-        category: 'Test category',
+        category: 'Test category'
       },
       {
         id: '2',
@@ -55,34 +56,33 @@ describe('ProductsComponent', () => {
         description: 'Test description',
         image: 'test-image.jpg',
         price: '19.99',
-        category: 'Test category',
+        category: 'Test category'
       }
     ];
-    spyOn(productService, 'getProducts').and.returnValue(of(response));
+    mockProductService.getProducts.and.returnValue(of(response));
 
     component.ngOnInit();
-    expect(productService.getProducts).toHaveBeenCalled();
+    expect(mockProductService.getProducts).toHaveBeenCalled();
     expect(component.productData).toEqual(response);
     expect(component.showSpinner).toBeFalse();
   });
 
   it('should get product data initially on failure', () => {
     const error = new Error('Error deleting product');
-
-    spyOn(productService, 'getProducts').and.returnValue((throwError(() => error)));
+    mockProductService.getProducts.and.returnValue((throwError(() => error)));
     spyOn(matSnackBar, 'open');
 
     component.ngOnInit();
 
-    expect(productService.getProducts).toHaveBeenCalled();
+    expect(mockProductService.getProducts).toHaveBeenCalled();
     expect(component.showSpinner).toBeFalse();
     expect(matSnackBar.open).toHaveBeenCalledWith('Something went wrong!...', '', {
-      duration: 3000,
+      duration: 3000
     });
   })
 
   it('should test openDialog', () => {
-    spyOn(dialog, 'open')
+    spyOn(dialog, 'open');
     component.openDialog();
     expect(dialog.open).toHaveBeenCalledWith(AddProductComponent, { width: '40%' });
   });
@@ -94,9 +94,9 @@ describe('ProductsComponent', () => {
       description: 'Test description',
       image: 'test-image.jpg',
       price: '19.99',
-      category: 'Test category',
+      category: 'Test category'
     };
-    spyOn(dialog, 'open')
+    spyOn(dialog, 'open');
     component.editProduct(product);
     expect(dialog.open).toHaveBeenCalledWith(AddProductComponent, { data: product, width: '40%' });
   });
@@ -110,13 +110,13 @@ describe('ProductsComponent', () => {
       price: '19.99',
       category: 'Test category'
     };
-    spyOn(productService, 'deleteProduct').and.returnValue(of(product));
+    mockProductService.deleteProduct.and.returnValue(of(product));
     spyOn(matSnackBar, 'open');
 
     component.deleteProduct(product);
 
     expect(matSnackBar.open).toHaveBeenCalledWith('Deleted Successfully!...', '', {
-      duration: 3000,
+      duration: 3000
     });
   });
 
@@ -127,15 +127,17 @@ describe('ProductsComponent', () => {
       description: 'Test description',
       image: 'test-image.jpg',
       price: '19.99',
-      category: 'Test category' };
+      category: 'Test category'
+    };
     const error = new Error('Error deleting product');
-    spyOn(productService, 'deleteProduct').and.returnValue((throwError(() => error)));
+    mockProductService.deleteProduct.and.returnValue((throwError(() => error)));
     spyOn(matSnackBar, 'open');
 
     component.deleteProduct(product);
 
     expect(matSnackBar.open).toHaveBeenCalledWith('Something went wrong!...', '', {
-      duration: 3000,
+      duration: 3000
     });
   });
+
 });

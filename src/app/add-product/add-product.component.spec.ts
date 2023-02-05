@@ -1,109 +1,89 @@
-import { NO_ERRORS_SCHEMA } from '@angular/compiler';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   FormBuilder,
-  FormControl,
-  FormGroup,
 } from '@angular/forms';
 import {
-  MatDialogModule,
   MatDialogRef,
   MAT_DIALOG_DATA,
 } from '@angular/material/dialog';
-import { By } from '@angular/platform-browser';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { Product } from '../models/product.model';
 import { ProductsService } from '../services/products.service';
 import { MaterialModule } from '../shared/material.module';
 import { SharedModule } from '../shared/shared.module';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { AddProductComponent } from './add-product.component';
 
 describe('AddProductComponent', () => {
   let component: AddProductComponent;
   let fixture: ComponentFixture<AddProductComponent>;
-  let productService: ProductsService;
   let dialogRef: MatDialogRef<AddProductComponent>;
-  let formBuilder: FormBuilder;
-  let data: Product;
+  let matSnackBar = jasmine.createSpyObj('MatSnackbar', ['open']);
+  let mockProductService = jasmine.createSpyObj('ProductsService', ['updateProduct', 'saveProduct']);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MaterialModule, NoopAnimationsModule, SharedModule],
+      imports: [NoopAnimationsModule, MatSnackBarModule, MaterialModule],
       declarations: [AddProductComponent],
       providers: [
-        ProductsService,
-        SharedModule,
-        FormBuilder,
-        { provide: NO_ERRORS_SCHEMA, useValue: {} },
-        { provide: MatDialogRef, useValue: {} },
-        { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: ProductsService, useValue: mockProductService},
+        { provide: MatDialogRef, useValue: jasmine.createSpyObj('MatDialogRef', ['close']) },
+        { provide: MAT_DIALOG_DATA, useValue: undefined }
       ],
+      schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AddProductComponent);
     component = fixture.componentInstance;
 
-    productService = TestBed.inject(ProductsService);
+    mockProductService = TestBed.inject(ProductsService);
     dialogRef = TestBed.inject(MatDialogRef);
-    formBuilder = TestBed.inject(FormBuilder);
-    data = TestBed.inject(MAT_DIALOG_DATA);
+    matSnackBar = TestBed.inject(MatSnackBar);
     fixture.detectChanges();
+
+    // console.log(JSON.stringify(TestBed.inject(MaterialModule)));
+
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should create a form group with the correct controls', () => {
-    expect(component.productForm instanceof FormGroup).toBeTruthy();
-    expect(
-      component.productForm.controls['title'] instanceof FormControl
-    ).toBeTruthy();
-    expect(
-      component.productForm.controls['description'] instanceof FormControl
-    ).toBeTruthy();
-    expect(
-      component.productForm.controls['image'] instanceof FormControl
-    ).toBeTruthy();
-    expect(
-      component.productForm.controls['price'] instanceof FormControl
-    ).toBeTruthy();
-    expect(
-      component.productForm.controls['category'] instanceof FormControl
-    ).toBeTruthy();
+  it('should init the form', () => {
+    expect(component.productForm).toBeDefined();
   });
 
   it('should set the form controls to the correct values when data is provided', () => {
     const data: Product = {
-      id: '1',
       title: 'Test Product',
       description: 'Test description',
       image: 'test-image.jpg',
       price: '19.99',
-      category: 'Test category',
+      category: 'Test category'
     };
-    component = new AddProductComponent(productService, data, dialogRef);
+    component = new AddProductComponent(mockProductService, matSnackBar, data, dialogRef);
     component.ngOnInit();
-    delete data.id;
+    // delete data.id;
     expect(component.productForm.value).toEqual(data);
   });
 
-  it('should handle file selection', () => {
-    // Arrange
-    const file = new File([], 'test.jpg');
-    const event = { target: { files: [file] } };
-    // spyOn(component.productForm, 'patchValue');
-    spyOn(FileReader.prototype, 'readAsDataURL').and.callFake(() => {});
-    // Act
-    component.onFileSelected(event);
+  it('should set imageSrc to the result of reading a selected file', () => {
+    const file = new File([], 'test-image.jpg');
+    const reader = jasmine.createSpyObj('FileReader', ['readAsDataURL', 'onload']);
+    reader.readAsDataURL.and.callFake(() => {
+      reader.onload({
+        target: { result: 'data:image/jpeg;base64,test-image-data' }
+      });
+    });
+    spyOn(window, 'FileReader').and.returnValue(reader);
 
+    component.onFileSelected({ target: { files: [file] } });
 
-    // Assert
-    expect(component.imageSrc).toBeUndefined();
-    // expect(component.productForm.patchValue).toHaveBeenCalledWith({image: file})
-    expect(FileReader.prototype.readAsDataURL).toHaveBeenCalledWith(file);
+    expect(reader.readAsDataURL).toHaveBeenCalledWith(file);
+    expect(component.imageSrc).toBe('data:image/jpeg;base64,test-image-data');
   });
 
   it('should call the saveProduct while editing the product', () => {
@@ -113,7 +93,7 @@ describe('AddProductComponent', () => {
       description: 'Test description',
       image: 'test-image.jpg',
       price: '19.99',
-      category: 'Test category',
+      category: 'Test category'
     };
     const response: Product = {
       id: '1',
@@ -121,15 +101,18 @@ describe('AddProductComponent', () => {
       description: 'Test description',
       image: 'test-image.jpg',
       price: '19.99',
-      category: 'Test category',
+      category: 'Test category'
     };
-    component = new AddProductComponent(productService, data, dialogRef);
+    component = new AddProductComponent(mockProductService, matSnackBar, data, dialogRef);
     component.ngOnInit();
-    const spy = spyOn(productService, 'updateProduct').and.returnValue(
-      of(response)
-    );
+    mockProductService.updateProduct.and.returnValue(of(response));
+    spyOn(matSnackBar, 'open');
     component.saveProduct();
-    expect(spy).toHaveBeenCalledWith(data);
+    expect(mockProductService.updateProduct).toHaveBeenCalledWith(data);
+    expect(matSnackBar.open).toHaveBeenCalledWith('Updated Successfully!...', '', {
+      duration: 3000
+    });
+    expect(dialogRef.close).toHaveBeenCalled();
   });
 
   it('should call the saveProduct to add new product', () => {
@@ -138,7 +121,7 @@ describe('AddProductComponent', () => {
       description: 'Test description',
       image: 'test-image.jpg',
       price: '19.99',
-      category: 'Test category',
+      category: 'Test category'
     };
     const response: Product = {
       id: '1',
@@ -146,15 +129,57 @@ describe('AddProductComponent', () => {
       description: 'Test description',
       image: 'test-image.jpg',
       price: '19.99',
-      category: 'Test category',
+      category: 'Test category'
     };
-    component = new AddProductComponent(productService, undefined, dialogRef);
-    component.ngOnInit();
     component.productForm.setValue(data);
-    const spy = spyOn(productService, 'saveProduct').and.returnValue(
-      of(response)
-    );
+    mockProductService.saveProduct.and.returnValue(of(response));
+    spyOn(matSnackBar, 'open');
     component.saveProduct();
-    expect(spy).toHaveBeenCalledWith(data);
+    expect(mockProductService.saveProduct).toHaveBeenCalledWith(data);
+    expect(matSnackBar.open).toHaveBeenCalledWith('Added Successfully!...', '', {
+      duration: 3000
+    });
+    expect(dialogRef.close).toHaveBeenCalled();
+  });
+
+  it('should test the saveProduct for failure while add a new product', () => {
+    const data: Product = {
+      title: 'Test Product',
+      description: 'Test description',
+      image: 'test-image.jpg',
+      price: '19.99',
+      category: 'Test category'
+    };
+    const error = new Error('Error while add a new product');
+    mockProductService.saveProduct.and.returnValue((throwError(() => error)));
+    component.productForm.setValue(data);
+    spyOn(matSnackBar, 'open');
+    component.saveProduct();
+    expect(mockProductService.saveProduct).toHaveBeenCalledWith(data);
+    expect(matSnackBar.open).toHaveBeenCalledWith('Something went wrong!...', '', {
+      duration: 3000
+    });
+  });
+
+  it('should test the saveProduct for failure while update a product', () => {
+    const data: Product = {
+      id: '1',
+      title: 'Test Product',
+      description: 'Test description',
+      image: 'test-image.jpg',
+      price: '19.99',
+      category: 'Test category'
+    };
+    const error = new Error('Error while update a product');
+    component = new AddProductComponent(mockProductService, matSnackBar, data, dialogRef);
+    component.ngOnInit();
+    mockProductService.updateProduct.and.returnValue((throwError(() => error)));
+    component.productForm.patchValue(data);
+    spyOn(matSnackBar, 'open');
+    component.saveProduct();
+    expect(mockProductService.updateProduct).toHaveBeenCalledWith(data);
+    expect(matSnackBar.open).toHaveBeenCalledWith('Something went wrong!...', '', {
+      duration: 3000
+    });
   });
 });
