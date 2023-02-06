@@ -1,20 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  FormBuilder,
-} from '@angular/forms';
-import {
-  MatDialogRef,
-  MAT_DIALOG_DATA,
-} from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { Product } from '../models/product.model';
 import { ProductsService } from '../services/products.service';
-import { MaterialModule } from '../shared/material.module';
 import { SharedModule } from '../shared/shared.module';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-
 import { AddProductComponent } from './add-product.component';
 
 describe('AddProductComponent', () => {
@@ -26,14 +17,14 @@ describe('AddProductComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, MatSnackBarModule, MaterialModule],
+      imports: [NoopAnimationsModule, SharedModule],
       declarations: [AddProductComponent],
       providers: [
         { provide: ProductsService, useValue: mockProductService},
+        { provide: MatSnackBar, useValue: matSnackBar},
         { provide: MatDialogRef, useValue: jasmine.createSpyObj('MatDialogRef', ['close']) },
         { provide: MAT_DIALOG_DATA, useValue: undefined }
       ],
-      schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AddProductComponent);
@@ -43,9 +34,6 @@ describe('AddProductComponent', () => {
     dialogRef = TestBed.inject(MatDialogRef);
     matSnackBar = TestBed.inject(MatSnackBar);
     fixture.detectChanges();
-
-    // console.log(JSON.stringify(TestBed.inject(MaterialModule)));
-
   });
 
   it('should create', () => {
@@ -106,7 +94,7 @@ describe('AddProductComponent', () => {
     component = new AddProductComponent(mockProductService, matSnackBar, data, dialogRef);
     component.ngOnInit();
     mockProductService.updateProduct.and.returnValue(of(response));
-    spyOn(matSnackBar, 'open');
+    // spyOn(matSnackBar, 'open');
     component.saveProduct();
     expect(mockProductService.updateProduct).toHaveBeenCalledWith(data);
     expect(matSnackBar.open).toHaveBeenCalledWith('Updated Successfully!...', '', {
@@ -133,7 +121,7 @@ describe('AddProductComponent', () => {
     };
     component.productForm.setValue(data);
     mockProductService.saveProduct.and.returnValue(of(response));
-    spyOn(matSnackBar, 'open');
+    // spyOn(matSnackBar, 'open');
     component.saveProduct();
     expect(mockProductService.saveProduct).toHaveBeenCalledWith(data);
     expect(matSnackBar.open).toHaveBeenCalledWith('Added Successfully!...', '', {
@@ -153,7 +141,7 @@ describe('AddProductComponent', () => {
     const error = new Error('Error while add a new product');
     mockProductService.saveProduct.and.returnValue((throwError(() => error)));
     component.productForm.setValue(data);
-    spyOn(matSnackBar, 'open');
+    // spyOn(matSnackBar, 'open');
     component.saveProduct();
     expect(mockProductService.saveProduct).toHaveBeenCalledWith(data);
     expect(matSnackBar.open).toHaveBeenCalledWith('Something went wrong!...', '', {
@@ -175,11 +163,12 @@ describe('AddProductComponent', () => {
     component.ngOnInit();
     mockProductService.updateProduct.and.returnValue((throwError(() => error)));
     component.productForm.patchValue(data);
-    spyOn(matSnackBar, 'open');
+    // spyOn(matSnackBar, 'open');
     component.saveProduct();
     expect(mockProductService.updateProduct).toHaveBeenCalledWith(data);
     expect(matSnackBar.open).toHaveBeenCalledWith('Something went wrong!...', '', {
       duration: 3000
     });
   });
+
 });

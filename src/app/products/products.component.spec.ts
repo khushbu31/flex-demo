@@ -13,19 +13,21 @@ import { ProductsComponent } from './products.component';
 describe('ProductsComponent', () => {
   let component: ProductsComponent;
   let fixture: ComponentFixture<ProductsComponent>;
-  let dialog: MatDialog;
-  let matSnackBar: MatSnackBar;
+  let dialog = jasmine.createSpyObj('MatSnackbar', ['open']);;
+  let matSnackBar = jasmine.createSpyObj('MatSnackbar', ['open']);
   let mockProductService = jasmine.createSpyObj('ProductsService', ['getProducts', 'deleteProduct']);
   mockProductService.getProducts.and.returnValue(of([]));
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [ProductsComponent],
-      imports: [SharedModule, MaterialModule, MatDialogModule, MatSnackBarModule],
+      imports: [SharedModule, MaterialModule],
       providers: [
+        { provide: MatSnackBar, useValue: matSnackBar},
+
         { provide: ProductsService, useValue: mockProductService}
     ],
-    schemas: [NO_ERRORS_SCHEMA]
+    // schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProductsComponent);
@@ -70,7 +72,7 @@ describe('ProductsComponent', () => {
   it('should get product data initially on failure', () => {
     const error = new Error('Error deleting product');
     mockProductService.getProducts.and.returnValue((throwError(() => error)));
-    spyOn(matSnackBar, 'open');
+    // spyOn(matSnackBar, 'open');
 
     component.ngOnInit();
 
@@ -111,7 +113,7 @@ describe('ProductsComponent', () => {
       category: 'Test category'
     };
     mockProductService.deleteProduct.and.returnValue(of(product));
-    spyOn(matSnackBar, 'open');
+    // spyOn(matSnackBar, 'open');
 
     component.deleteProduct(product);
 
@@ -131,7 +133,7 @@ describe('ProductsComponent', () => {
     };
     const error = new Error('Error deleting product');
     mockProductService.deleteProduct.and.returnValue((throwError(() => error)));
-    spyOn(matSnackBar, 'open');
+    // spyOn(matSnackBar, 'open');
 
     component.deleteProduct(product);
 
